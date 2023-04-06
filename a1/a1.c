@@ -23,22 +23,25 @@ void parse_path(char *filepath)
 {
     int fd = open(filepath, O_RDONLY);
     struct section_header section_headers;
-    //lseek(fd, 0, SEEK_SET);
+    // lseek(fd, 0, SEEK_SET);
 
-    char magic[1];
+    char magic[2];
     int version = 0, nr_section = 0, header_size = 0;
 
     if (fd < 0)
     {
-        return ;
+        return;
     }
 
     read(fd, &magic, 1);
+    magic[1] = '\0';
 
     if (strcmp(magic, "W") != 0)
     {
-        printf("ERROR\nwrong magic\n");
-        return ;
+        printf("ERROR\nwrong magic");
+        // close(fd);
+
+        return;
     }
 
     read(fd, &header_size, 2);
@@ -47,17 +50,20 @@ void parse_path(char *filepath)
 
     if (version < 74 || version > 103)
     {
-        printf("ERROR\nwrong version\n");
-        return ;
+        printf("ERROR\nwrong version");
+        // close(fd);
+
+        return;
     }
 
     read(fd, &nr_section, 1);
-    //printf("%d\n",nr_section);
+    // printf("%d\n",nr_section);
     if (nr_section < 4 || nr_section > 10)
     {
-        printf("ERROR\nwrong sect_nr\n");
+        printf("ERROR\nwrong sect_nr");
+        // close(fd);
 
-        return ;
+        return;
     }
 
     for (int i = 0; i < nr_section; i++)
@@ -71,9 +77,10 @@ void parse_path(char *filepath)
 
         if (section_headers.sect_type != 46 && section_headers.sect_type != 54 && section_headers.sect_type != 32 && section_headers.sect_type != 89 && section_headers.sect_type != 56)
         {
-            printf("ERROR\nwrong sect_types\n");
+            printf("ERROR\nwrong sect_types");
+            // close(fd);
 
-            return ;
+            return;
         }
 
         read(fd, &section_headers.sect_offset, 4);
@@ -81,20 +88,19 @@ void parse_path(char *filepath)
         read(fd, &section_headers.sect_size, 4);
     }
 
-
-    int offset = 1+2+2+1;
+    int offset = 1 + 2 + 2 + 1;
 
     lseek(fd, offset, SEEK_SET);
 
-    //lseek(fd,0,SEEK_SET);
+    // lseek(fd,0,SEEK_SET);
 
     printf("SUCCESS\n");
-    //read(fd, &magic, 1);
-  // read(fd, &header_size, 2);
-   // read(fd, &version, 2);
+    // read(fd, &magic, 1);
+    // read(fd, &header_size, 2);
+    // read(fd, &version, 2);
 
     printf("version=%d\n", version);
-    //read(fd, &nr_section, 1);
+    // read(fd, &nr_section, 1);
 
     printf("nr_sections=%d\n", nr_section);
 
@@ -106,7 +112,7 @@ void parse_path(char *filepath)
 
         printf("section%d:", i);
         read(fd, &section_headers.section_name, 17);
-        section_headers.section_name[17]='\0';
+        section_headers.section_name[17] = '\0';
 
         printf(" %s", section_headers.section_name);
 
@@ -122,6 +128,233 @@ void parse_path(char *filepath)
     }
 
     close(fd);
+}
+
+void extract(char *directory, int section, int line)
+{
+
+    int fd = open(directory, O_RDONLY);
+    lseek(fd, 0, SEEK_SET);
+    struct section_header section_headers;
+    char magic[2];
+    int version = 0, nr_section = 0, header_size = 0;
+
+    if (fd < 0)
+    {
+        close(directory);
+        printf("ERROR\ninvalid file\n");
+        return;
+    }
+
+    read(fd, &magic, 1);
+    magic[1] = '\0';
+
+    if (strcmp(magic, "W") != 0)
+    {
+        close(directory);
+
+        return;
+    }
+
+    read(fd, &header_size, 2);
+
+    read(fd, &version, 2);
+    // printf("version=%d\n", version);
+
+    if (version < 74 || version > 103)
+        return;
+
+    read(fd, &nr_section, 1);
+    if (nr_section < 4 || nr_section > 10)
+    {
+        close(directory);
+
+        return;
+    }   
+    
+    //printf("DA\n");
+/*
+    if (section < 4 || section > 10)
+    {
+
+        printf("ERROR\ninvalid section\n");        
+        close(directory);
+
+        return;
+    }
+*/
+
+    // printf("nr_sections=%d\n", nr_section);
+
+    for (int i = 1; i < nr_section; i++)
+    {  
+
+        section_headers.sect_type = 0;
+        section_headers.sect_offset = 0;
+        section_headers.sect_size = 0;
+        read(fd, &section_headers.section_name, 17);
+        section_headers.section_name[17] = '\0';
+
+        read(fd, &section_headers.sect_type, 4);
+
+        if (section_headers.sect_type != 46 && section_headers.sect_type != 54 && section_headers.sect_type != 32 && section_headers.sect_type != 89 && section_headers.sect_type != 56)
+        {
+            close(directory);
+
+            return;
+        }
+
+        read(fd, &section_headers.sect_offset, 4);
+
+        read(fd, &section_headers.sect_size, 4);
+    }
+
+    printf("SUCCESS\n");
+        printf(" %d", section_headers.sect_size);
+
+    int offset = 1 + 2 + 2 + 1;
+
+    lseek(fd, offset, SEEK_SET);
+
+    for (int i = 1; i <= section; i++)
+    {
+               
+        section_headers.sect_type = 0;
+        section_headers.sect_offset = 0;
+        section_headers.sect_size = 0;
+        read(fd, &section_headers.section_name, 17);
+        section_headers.section_name[17] = '\0';
+
+        read(fd, &section_headers.sect_type, 4);
+
+        read(fd, &section_headers.sect_offset, 4);
+
+        read(fd, &section_headers.sect_size, 4);
+    }
+
+    char buff[20000];
+
+    lseek(fd,section_headers.sect_offset,SEEK_CUR);
+
+    read(fd,&buff,section_headers.sect_size);
+
+    int nr=1;
+    for(int i=section_headers.sect_size;i>0;i--){
+        if(line==nr)
+            //while(strcmp(buff[i],"0D 0A")!=0)
+            printf("%s",buff[i]);
+    printf("%d",nr);
+
+        if(strcmp(buff[i],"0D 0A")==0)
+            nr++;
+        if(nr>line)
+        {
+            printf("ERROR\ninvalid line\n");
+            close(fd);
+            return;
+        }
+    }
+
+    close(fd);
+}
+
+void find(char *directory, int c)
+{
+    DIR *dir;
+    struct dirent *dirEntry;
+    struct stat inode;
+    char *final = malloc(MAX_PATH * sizeof(char));
+
+    dir = opendir(directory);
+    if (dir == NULL)
+    {
+        printf("ERROR\ninvalid directory path\n");
+        return;
+    }
+    if (c == 1)
+    {
+        c = 0;
+        printf("SUCCESS\n");
+    }
+    while ((dirEntry = readdir(dir)) != 0)
+    {
+        if (strcmp(dirEntry->d_name, ".") != 0 && strcmp(dirEntry->d_name, "..") != 0)
+        {
+            snprintf(final, MAX_PATH, "%s/%s", directory, dirEntry->d_name);
+
+            stat(final, &inode);
+            if (S_ISREG(inode.st_mode))
+            {
+
+                int fd = open(final, O_RDONLY);
+                lseek(fd, 0, SEEK_SET);
+                struct section_header section_headers;
+                char magic[2];
+                int version = 0, nr_section = 0, header_size = 0, k = 0;
+
+                if (fd < 0)
+                {
+                    free(final);
+                    return;
+                }
+
+                read(fd, &magic, 1);
+                magic[1] = '\0';
+
+                if (strcmp(magic, "W") != 0)
+                {
+                    free(final);
+
+                    return;
+                }
+
+                read(fd, &header_size, 2);
+
+                read(fd, &version, 2);
+                // printf("version=%d\n", version);
+
+                if (version < 74 || version > 103)
+                    return;
+
+                read(fd, &nr_section, 1);
+                if (nr_section < 4 || nr_section > 10)
+                {
+                    free(final);
+
+                    return;
+                }
+                // printf("nr_sections=%d\n", nr_section);
+
+                for (int i = 0; i < nr_section && k == 0; i++)
+                {
+                    section_headers.sect_type = 0;
+                    section_headers.sect_offset = 0;
+                    section_headers.sect_size = 0;
+                    read(fd, &section_headers.section_name, 17);
+                    section_headers.section_name[17] = '\0';
+
+                    read(fd, &section_headers.sect_type, 4);
+
+                    if (section_headers.sect_type == 56)
+                        k++;
+
+                    read(fd, &section_headers.sect_offset, 4);
+
+                    read(fd, &section_headers.sect_size, 4);
+                }
+
+                close(fd);
+                if (k != 0)
+                    printf("%s\n", final);
+            }
+            if (S_ISDIR(inode.st_mode))
+            {
+                // printf("DIR \n");
+                find(final, 0);
+            }
+        }
+    }
+    free(final);
 }
 
 int search_directory(char *directory, int option, int value, int recursiv, int k)
@@ -217,17 +450,42 @@ int main(int argc, char **argv)
                 }
             }
             test = search_directory(dir, c, value, recursive, 1);
-            if(test){ test=1;}
-
+            if (test)
+            {
+                test = 1;
+            }
         }
         else if (strcmp(argv[1], "parse") == 0)
         {
             if (strncmp(argv[2], "path=", 4) == 0)
             {
-
                 dir = strtok(argv[2] + 5, "=");
 
                 parse_path(dir);
+            }
+        }
+        else if (strcmp(argv[1], "findall") == 0)
+        {
+            if (strncmp(argv[2], "path=", 4) == 0)
+            {
+                dir = strtok(argv[2] + 5, "=");
+                find(dir, 1);
+            }
+        }
+        else if (strcmp(argv[1], "extract") == 0)
+        {
+            int section, line;
+            if (strncmp(argv[2], "path=", 4) == 0)
+            {
+                dir = strtok(argv[2] + 5, "=");
+                if (strncmp(argv[3], "section=", 7) == 0)
+                    section = atoi(strtok(argv[3] + 8, "="));
+                if (strncmp(argv[4], "line=", 4) == 0)
+                    line = atoi(strtok(argv[4] + 5, "="));
+              //  printf("%d\n",line);
+
+
+                extract(dir, section, line);
             }
         }
     }
