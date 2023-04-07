@@ -141,7 +141,7 @@ void extract(char *directory, int section, int line)
 
     if (fd < 0)
     {
-        close(directory);
+        close(fd);
         printf("ERROR\ninvalid file\n");
         return;
     }
@@ -151,7 +151,7 @@ void extract(char *directory, int section, int line)
 
     if (strcmp(magic, "W") != 0)
     {
-        close(directory);
+        close(fd);
 
         return;
     }
@@ -167,27 +167,26 @@ void extract(char *directory, int section, int line)
     read(fd, &nr_section, 1);
     if (nr_section < 4 || nr_section > 10)
     {
-        close(directory);
-
-        return;
-    }   
-    
-    //printf("DA\n");
-/*
-    if (section < 4 || section > 10)
-    {
-
-        printf("ERROR\ninvalid section\n");        
-        close(directory);
+        close(fd);
 
         return;
     }
-*/
+
+    // printf("DA\n");
+
+    if (section > nr_section)
+    {
+
+        printf("ERROR\ninvalid section\n");
+        close(fd);
+
+        return;
+    }
 
     // printf("nr_sections=%d\n", nr_section);
 
     for (int i = 1; i < nr_section; i++)
-    {  
+    {
 
         section_headers.sect_type = 0;
         section_headers.sect_offset = 0;
@@ -199,7 +198,7 @@ void extract(char *directory, int section, int line)
 
         if (section_headers.sect_type != 46 && section_headers.sect_type != 54 && section_headers.sect_type != 32 && section_headers.sect_type != 89 && section_headers.sect_type != 56)
         {
-            close(directory);
+            close(fd);
 
             return;
         }
@@ -210,7 +209,6 @@ void extract(char *directory, int section, int line)
     }
 
     printf("SUCCESS\n");
-        printf(" %d", section_headers.sect_size);
 
     int offset = 1 + 2 + 2 + 1;
 
@@ -218,7 +216,7 @@ void extract(char *directory, int section, int line)
 
     for (int i = 1; i <= section; i++)
     {
-               
+
         section_headers.sect_type = 0;
         section_headers.sect_offset = 0;
         section_headers.sect_size = 0;
@@ -233,28 +231,31 @@ void extract(char *directory, int section, int line)
     }
 
     char buff[20000];
+    lseek(fd, section_headers.sect_offset, SEEK_CUR);
 
-    lseek(fd,section_headers.sect_offset,SEEK_CUR);
+    read(fd, buff, section_headers.sect_size);
 
-    read(fd,&buff,section_headers.sect_size);
-
-    int nr=1;
-    for(int i=section_headers.sect_size;i>0;i--){
-        if(line==nr)
-            //while(strcmp(buff[i],"0D 0A")!=0)
-            printf("%s",buff[i]);
-    printf("%d",nr);
-
-        if(strcmp(buff[i],"0D 0A")==0)
+    int nr = 1, k = 0;
+    for (int i = section_headers.sect_size - 1; i >= 0; i--)
+    {
+        if (line == nr)
+        {
+            printf("%c", buff[i]);
+            k = 1;
+        }
+        printf("%d\n",nr);
+        if (buff[i] == 0x0A && buff[i - 1] == 0x0D)
             nr++;
-        if(nr>line)
+        if(buff[i] == 0x0A && buff[i - 1] == 0x0D && k==1)
+        break;
+
+        if (nr > line && k == 0)
         {
             printf("ERROR\ninvalid line\n");
             close(fd);
             return;
         }
     }
-
     close(fd);
 }
 
@@ -269,6 +270,7 @@ void find(char *directory, int c)
     if (dir == NULL)
     {
         printf("ERROR\ninvalid directory path\n");
+        free(final);
         return;
     }
     if (c == 1)
@@ -295,6 +297,7 @@ void find(char *directory, int c)
                 if (fd < 0)
                 {
                     free(final);
+                    close(fd);
                     return;
                 }
 
@@ -304,6 +307,7 @@ void find(char *directory, int c)
                 if (strcmp(magic, "W") != 0)
                 {
                     free(final);
+                    close(fd);
 
                     return;
                 }
@@ -314,13 +318,17 @@ void find(char *directory, int c)
                 // printf("version=%d\n", version);
 
                 if (version < 74 || version > 103)
+                {
+                    close(fd);
+                    free(final);
                     return;
+                }
 
                 read(fd, &nr_section, 1);
                 if (nr_section < 4 || nr_section > 10)
                 {
                     free(final);
-
+                    close(fd);
                     return;
                 }
                 // printf("nr_sections=%d\n", nr_section);
@@ -482,8 +490,7 @@ int main(int argc, char **argv)
                     section = atoi(strtok(argv[3] + 8, "="));
                 if (strncmp(argv[4], "line=", 4) == 0)
                     line = atoi(strtok(argv[4] + 5, "="));
-              //  printf("%d\n",line);
-
+                //  printf("%d\n",line);
 
                 extract(dir, section, line);
             }
