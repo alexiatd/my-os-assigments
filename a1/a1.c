@@ -172,8 +172,6 @@ void extract(char *directory, int section, int line)
         return;
     }
 
-    // printf("DA\n");
-
     if (section > nr_section)
     {
 
@@ -183,9 +181,7 @@ void extract(char *directory, int section, int line)
         return;
     }
 
-    // printf("nr_sections=%d\n", nr_section);
-
-    for (int i = 1; i < nr_section; i++)
+    for (int i = 1; i <= nr_section; i++)
     {
 
         section_headers.sect_type = 0;
@@ -207,6 +203,7 @@ void extract(char *directory, int section, int line)
 
         read(fd, &section_headers.sect_size, 4);
     }
+
 
     printf("SUCCESS\n");
 
@@ -230,10 +227,10 @@ void extract(char *directory, int section, int line)
         read(fd, &section_headers.sect_size, 4);
     }
 
-    char buff[20000];
-    lseek(fd, section_headers.sect_offset, SEEK_CUR);
+    char buff[2000000];
+    lseek(fd, section_headers.sect_offset, SEEK_SET);
 
-    read(fd, buff, section_headers.sect_size);
+    read(fd, &buff, section_headers.sect_size);
 
     int nr = 1, k = 0;
     for (int i = section_headers.sect_size - 1; i >= 0; i--)
@@ -243,11 +240,9 @@ void extract(char *directory, int section, int line)
             printf("%c", buff[i]);
             k = 1;
         }
-        printf("%d\n",nr);
         if (buff[i] == 0x0A && buff[i - 1] == 0x0D)
             nr++;
-        if(buff[i] == 0x0A && buff[i - 1] == 0x0D && k==1)
-        break;
+
 
         if (nr > line && k == 0)
         {
@@ -256,6 +251,13 @@ void extract(char *directory, int section, int line)
             return;
         }
     }
+    if (nr < line)
+    {
+        printf("ERROR\ninvalid line\n");
+        close(fd);
+        return;
+    }
+    //free(buff);
     close(fd);
 }
 
@@ -497,6 +499,5 @@ int main(int argc, char **argv)
         }
     }
 
-    // 0x0A,0x0D
     return 0;
 }
