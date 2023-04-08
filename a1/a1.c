@@ -204,7 +204,6 @@ void extract(char *directory, int section, int line)
         read(fd, &section_headers.sect_size, 4);
     }
 
-
     printf("SUCCESS\n");
 
     int offset = 1 + 2 + 2 + 1;
@@ -227,7 +226,7 @@ void extract(char *directory, int section, int line)
         read(fd, &section_headers.sect_size, 4);
     }
 
-    char buff[2000000];
+    char buff[5000000];
     lseek(fd, section_headers.sect_offset, SEEK_SET);
 
     read(fd, &buff, section_headers.sect_size);
@@ -243,7 +242,6 @@ void extract(char *directory, int section, int line)
         if (buff[i] == 0x0A && buff[i - 1] == 0x0D)
             nr++;
 
-
         if (nr > line && k == 0)
         {
             printf("ERROR\ninvalid line\n");
@@ -257,7 +255,7 @@ void extract(char *directory, int section, int line)
         close(fd);
         return;
     }
-    //free(buff);
+    // free(buff);
     close(fd);
 }
 
@@ -300,7 +298,9 @@ void find(char *directory, int c)
                 {
                     free(final);
                     close(fd);
-                    return;
+                    closedir(dir);
+
+                     return;
                 }
 
                 read(fd, &magic, 1);
@@ -310,8 +310,8 @@ void find(char *directory, int c)
                 {
                     free(final);
                     close(fd);
-
-                    return;
+                    closedir(dir);
+                     return;
                 }
 
                 read(fd, &header_size, 2);
@@ -323,7 +323,9 @@ void find(char *directory, int c)
                 {
                     close(fd);
                     free(final);
-                    return;
+                    closedir(dir);
+
+                         return;
                 }
 
                 read(fd, &nr_section, 1);
@@ -331,7 +333,9 @@ void find(char *directory, int c)
                 {
                     free(final);
                     close(fd);
-                    return;
+                    closedir(dir);
+
+                        return;
                 }
                 // printf("nr_sections=%d\n", nr_section);
 
@@ -365,6 +369,8 @@ void find(char *directory, int c)
         }
     }
     free(final);
+
+    closedir(dir);
 }
 
 int search_directory(char *directory, int option, int value, int recursiv, int k)
