@@ -384,7 +384,7 @@ int search_directory(char *directory, int option, int value, int recursiv, int k
     dir = opendir(directory);
     if (dir == NULL)
     {
-        // printf("ERROR\ninvalid directory path\n");
+        printf("ERROR\ninvalid directory path\n");
         return -1;
     }
     if (k == 1)
