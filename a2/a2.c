@@ -20,33 +20,12 @@ void V(sem_t *sem)
 {
     sem_post(sem);
 }
-
+/*
 void *thread_function7(void *arg)
 {
     int th_id = *(int *)arg;
 
-    if (th_id == 5)
-    {
-        info(BEGIN, 3, 3);
-
-        P(&sem);
-        info(BEGIN, 3, 2);
-        V(&sem);
-
-        info(END, 3, 2);
-        P(&sem1);
-
-        info(END, 3, 3);
-    }
-    else if (th_id != 2)
-    {
-        info(BEGIN, 3, th_id);
-
-        info(END, 3, th_id);
-
-        V(&sem1);
-    }
-    V(&sem);
+  
     return 0;
 }
 
@@ -54,30 +33,9 @@ void *thread_function50(void *arg)
 {
     int th_id = *(int *)arg;
 
-    if (th_id == 3)
-    {
-        info(BEGIN, 3, 3);
-
-        P(&sem);
-        info(BEGIN, 3, 2);
-        V(&sem);
-
-        info(END, 3, 2);
-        P(&sem1);
-
-        info(END, 3, 3);
-    }
-    else if (th_id != 2)
-    {
-        info(BEGIN, 3, th_id);
-
-        info(END, 3, th_id);
-
-        V(&sem1);
-    }
-    V(&sem);
     return 0;
 }
+*/
 
 void *thread_function3(void *arg)
 {
@@ -225,8 +183,8 @@ int main()
                     {
 
                         info(BEGIN, 7, 0);
-
-                        if(sem_init(&sem, 0, 0) < 0 || sem_init(&sem1, 0, 0) < 0)
+/*
+                        if (sem_init(&sem, 0, 0) < 0 || sem_init(&sem1, 0, 0) < 0)
                         {
                             perror("Error creating the semaphore");
                             exit(2);
@@ -237,7 +195,7 @@ int main()
                             int *id = malloc(sizeof(*id));
                             *id = i;
 
-                            if (pthread_create(&t[i], NULL, thread_function3, id) != 0)
+                            if (pthread_create(&t[i], NULL, thread_function7, id) != 0)
                             {
                                 perror("Cannot create threads");
                                 exit(1);
@@ -246,7 +204,7 @@ int main()
 
                         for (i = 1; i <= 5; i++)
                             pthread_join(t[i], NULL);
-
+*/
                         info(END, 7, 0);
                         return 0;
                     }
