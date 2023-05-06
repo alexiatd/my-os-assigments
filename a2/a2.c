@@ -8,8 +8,9 @@
 #include <sys/wait.h>
 #include "a2_helper.h"
 
-sem_t sem, sem1, sem2, sem3;
+sem_t sem, sem1, sem2, sem3, sem4;
 const char *program_name;
+pthread_mutex_t mutex;
 
 void P(sem_t *sem)
 {
@@ -44,29 +45,20 @@ void *thread_function7(void *arg)
 void *thread_function5(void *arg)
 {
     int th_id = *(int *)arg;
-/*
-    if (th_id < 5)
+    P(&sem2);
+
+    if (th_id == 12)
     {
-
-        info(BEGIN, 5, th_id);
-        P(&sem2);
-        info(END, 5, th_id);
-    }
-    else if (th_id == 12)
-    {
-
-        info(BEGIN, 5, 12);
-
-        info(END, 5, 12);
         V(&sem2);
-    }
-    else
-    {
-*/
-        info(BEGIN, 5, th_id);
-
-        info(END, 5, th_id);
     
+    
+    }
+
+    info(BEGIN, 5, th_id);
+
+    info(END, 5, th_id);
+    V(&sem2);
+
     return 0;
 }
 
@@ -153,6 +145,12 @@ int main()
                 {
                     info(BEGIN, 5, 0);
 
+                    if (sem_init(&sem2, 0, 6) < 0)
+                    {
+                        perror("Error creating the semaphore");
+                        exit(2);
+                    }
+
                     for (i = 1; i <= 50; i++)
                     {
                         int *id = malloc(sizeof(*id));
@@ -166,7 +164,13 @@ int main()
                     }
 
                     for (i = 1; i <= 50; i++)
+                    {
                         pthread_join(t5[i], NULL);
+                    }
+
+                    sem_destroy(&sem2);
+                    sem_destroy(&sem3);
+                    sem_destroy(&sem4);
 
                     p6 = fork();
 
