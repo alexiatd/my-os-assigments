@@ -8,7 +8,7 @@
 #include <sys/wait.h>
 #include "a2_helper.h"
 
-sem_t sem, sem1;
+sem_t sem, sem1, sem2, sem3;
 const char *program_name;
 
 void P(sem_t *sem)
@@ -20,22 +20,55 @@ void V(sem_t *sem)
 {
     sem_post(sem);
 }
-/*
+
 void *thread_function7(void *arg)
 {
     int th_id = *(int *)arg;
 
-  
+    if (th_id == 5)
+    {
+        info(BEGIN, 7, 5);
+
+        info(END, 7, 5);
+    }
+    else
+    {
+        info(BEGIN, 7, th_id);
+
+        info(END, 7, th_id);
+    }
+
     return 0;
 }
 
-void *thread_function50(void *arg)
+void *thread_function5(void *arg)
 {
     int th_id = *(int *)arg;
+/*
+    if (th_id < 5)
+    {
 
+        info(BEGIN, 5, th_id);
+        P(&sem2);
+        info(END, 5, th_id);
+    }
+    else if (th_id == 12)
+    {
+
+        info(BEGIN, 5, 12);
+
+        info(END, 5, 12);
+        V(&sem2);
+    }
+    else
+    {
+*/
+        info(BEGIN, 5, th_id);
+
+        info(END, 5, th_id);
+    
     return 0;
 }
-*/
 
 void *thread_function3(void *arg)
 {
@@ -68,7 +101,7 @@ void *thread_function3(void *arg)
 
 int main()
 {
-    pthread_t t[1000];
+    pthread_t t[1000], t7[1000], t5[1000];
 
     int p2, p3, p4, p5, p6, p7, p8, p9;
 
@@ -109,7 +142,6 @@ int main()
 
             for (i = 1; i <= 4; i++)
                 pthread_join(t[i], NULL);
-
             p4 = fork();
 
             if (p4 == 0) // p3
@@ -120,28 +152,21 @@ int main()
                 if (p5 == 0) // p4
                 {
                     info(BEGIN, 5, 0);
-                    /*
-                                        if (sem_init(&sem, 5, 0) < 0 || sem_init(&sem1, 5, 0) < 0)
-                                        {
-                                            perror("Error creating the semaphore");
-                                            exit(2);
-                                        }
 
-                                        for (i = 1; i <= 50; i++)
-                                        {
-                                            int *id = malloc(sizeof(*id));
-                                            *id = i;
+                    for (i = 1; i <= 50; i++)
+                    {
+                        int *id = malloc(sizeof(*id));
+                        *id = i;
 
-                                            if (pthread_create(&t[i], NULL, thread_function3, id) != 0)
-                                            {
-                                                perror("Cannot create threads");
-                                                exit(1);
-                                            }
-                                        }
+                        if (pthread_create(&t5[i], NULL, thread_function5, id) != 0)
+                        {
+                            perror("Cannot create threads");
+                            exit(1);
+                        }
+                    }
 
-                                        for (i = 1; i <= 50; i++)
-                                            pthread_join(t[i], NULL);
-                    */
+                    for (i = 1; i <= 50; i++)
+                        pthread_join(t5[i], NULL);
 
                     p6 = fork();
 
@@ -183,19 +208,13 @@ int main()
                     {
 
                         info(BEGIN, 7, 0);
-/*
-                        if (sem_init(&sem, 0, 0) < 0 || sem_init(&sem1, 0, 0) < 0)
-                        {
-                            perror("Error creating the semaphore");
-                            exit(2);
-                        }
 
                         for (i = 1; i <= 5; i++)
                         {
                             int *id = malloc(sizeof(*id));
                             *id = i;
 
-                            if (pthread_create(&t[i], NULL, thread_function7, id) != 0)
+                            if (pthread_create(&t7[i], NULL, thread_function7, id) != 0)
                             {
                                 perror("Cannot create threads");
                                 exit(1);
@@ -203,8 +222,8 @@ int main()
                         }
 
                         for (i = 1; i <= 5; i++)
-                            pthread_join(t[i], NULL);
-*/
+                            pthread_join(t7[i], NULL);
+
                         info(END, 7, 0);
                         return 0;
                     }
@@ -216,6 +235,7 @@ int main()
                 info(END, 4, 0);
                 return 0;
             }
+
             waitpid(p3, NULL, 0);
 
             info(END, 3, 0);
