@@ -26,18 +26,15 @@ void *thread_function7(void *arg)
 {
     int th_id = *(int *)arg;
 
-    if (th_id == 5)
-    {
-        info(BEGIN, 7, 5);
+        P(&sem2);
 
-        info(END, 7, 5);
-    }
-    else
-    {
-        info(BEGIN, 7, th_id);
 
-        info(END, 7, th_id);
-    }
+    info(BEGIN, 7, th_id);
+
+    info(END, 7, th_id);
+
+        V(&sem2);
+
 
     return 0;
 }
@@ -47,16 +44,10 @@ void *thread_function5(void *arg)
     int th_id = *(int *)arg;
     P(&sem2);
 
-    if (th_id == 12)
-    {
-        V(&sem2);
-    
-    
-    }
-
     info(BEGIN, 5, th_id);
 
     info(END, 5, th_id);
+
     V(&sem2);
 
     return 0;
@@ -78,6 +69,7 @@ void *thread_function3(void *arg)
         P(&sem1);
 
         info(END, 3, 3);
+        V(&sem);
     }
     else if (th_id != 2)
     {
@@ -86,8 +78,16 @@ void *thread_function3(void *arg)
         info(END, 3, th_id);
 
         V(&sem1);
+        V(&sem);
     }
-    V(&sem);
+    else if (th_id == 1)
+    {
+        info(BEGIN, 3, th_id);
+
+        info(END, 3, th_id);
+
+        V(&sem);
+    }
     return 0;
 }
 
