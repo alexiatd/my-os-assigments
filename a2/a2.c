@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <fcntl.h>
 #include <semaphore.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -8,9 +8,11 @@
 #include <sys/wait.h>
 #include "a2_helper.h"
 
-sem_t sem, sem1, sem2, sem3, sem4;
+sem_t sem, sem1, sem2, sem3;
+sem_t *semP;
+sem_t *semP0;
+
 const char *program_name;
-pthread_mutex_t mutex;
 
 void P(sem_t *sem)
 {
@@ -26,15 +28,25 @@ void *thread_function7(void *arg)
 {
     int th_id = *(int *)arg;
 
-        P(&sem2);
+    if (th_id == 5)
+    {
+        info(BEGIN, 7, th_id);
+        info(END, 7, th_id);
+        V(semP);
+    }
+    else if (th_id == 2)
+    {
+        P(semP0);
+        info(BEGIN, 7, th_id);
+        info(END, 7, th_id);
+    }
+    else
+    {
+        info(BEGIN, 7, th_id);
 
+        info(END, 7, th_id);
 
-    info(BEGIN, 7, th_id);
-
-    info(END, 7, th_id);
-
-        V(&sem2);
-
+    }
 
     return 0;
 }
@@ -43,7 +55,6 @@ void *thread_function5(void *arg)
 {
     int th_id = *(int *)arg;
     P(&sem2);
-
     info(BEGIN, 5, th_id);
 
     info(END, 5, th_id);
@@ -69,25 +80,28 @@ void *thread_function3(void *arg)
         P(&sem1);
 
         info(END, 3, 3);
-        V(&sem);
     }
     else if (th_id != 2)
     {
-        info(BEGIN, 3, th_id);
+        if (th_id == 1)
+        {
+            P(semP);
+            info(BEGIN, 3, th_id);
 
-        info(END, 3, th_id);
+            info(END, 3, th_id);
 
+            V(semP0);
+        }
+        else
+        {
+
+            info(BEGIN, 3, th_id);
+
+            info(END, 3, th_id);
+        }
         V(&sem1);
-        V(&sem);
     }
-    else if (th_id == 1)
-    {
-        info(BEGIN, 3, th_id);
-
-        info(END, 3, th_id);
-
-        V(&sem);
-    }
+    V(&sem);
     return 0;
 }
 
@@ -112,6 +126,10 @@ int main()
         if (p3 == 0) // p2
 
         {
+
+            semP = sem_open("sem", O_CREAT, 0644, 0);
+            semP0 = sem_open("sem0", O_CREAT, 0644, 0);
+
             info(BEGIN, 3, 0);
 
             if (sem_init(&sem, 4, 0) < 0 || sem_init(&sem1, 4, 0) < 0)
@@ -132,8 +150,6 @@ int main()
                 }
             }
 
-            for (i = 1; i <= 4; i++)
-                pthread_join(t[i], NULL);
             p4 = fork();
 
             if (p4 == 0) // p3
@@ -164,13 +180,9 @@ int main()
                     }
 
                     for (i = 1; i <= 50; i++)
-                    {
                         pthread_join(t5[i], NULL);
-                    }
 
                     sem_destroy(&sem2);
-                    sem_destroy(&sem3);
-                    sem_destroy(&sem4);
 
                     p6 = fork();
 
@@ -239,7 +251,17 @@ int main()
                 info(END, 4, 0);
                 return 0;
             }
+            else
+            {
 
+                for (i = 1; i <= 4; i++)
+                    pthread_join(t[i], NULL);
+            }
+
+            sem_destroy(&sem);
+            sem_destroy(&sem1);
+            sem_destroy(semP);
+            sem_destroy(semP0);
             waitpid(p3, NULL, 0);
 
             info(END, 3, 0);
