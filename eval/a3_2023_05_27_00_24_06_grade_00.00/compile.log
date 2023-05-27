@@ -1,0 +1,31 @@
+a3.c: In function 'main':
+a3.c:56:18: warning: initializer-string for array of 'char' is too long
+   56 |     char mess[5]="HELLO$";
+      |                  ^~~~~~~~
+a3.c:58:26: warning: implicit declaration of function 'strlen' [-Wimplicit-function-declaration]
+   58 |     if (write(res, mess, strlen(mess)) == -1)
+      |                          ^~~~~~
+a3.c:58:26: warning: incompatible implicit declaration of built-in function 'strlen'
+a3.c:11:1: note: include '<string.h>' or provide a declaration of 'strlen'
+   10 | #include <sys/mman.h>
+  +++ |+#include <string.h>
+   11 | 
+a3.c:94:12: warning: passing argument 1 of 'unlink' makes pointer from integer without a cast [-Wint-conversion]
+   94 |     unlink(res);
+      |            ^~~
+      |            |
+      |            int
+In file included from /usr/include/fortify/unistd.h:22,
+                 from a3.c:6:
+/usr/include/unistd.h:62:12: note: expected 'const char *' but argument is of type 'int'
+   62 | int unlink(const char *);
+      |            ^~~~~~~~~~~~
+a3.c:27:19: warning: unused variable 'smh_fd' [-Wunused-variable]
+   27 |     int n, fd[2], smh_fd;
+      |                   ^~~~~~
+a3.c:27:12: warning: unused variable 'fd' [-Wunused-variable]
+   27 |     int n, fd[2], smh_fd;
+      |            ^~
+a3.c:27:9: warning: unused variable 'n' [-Wunused-variable]
+   27 |     int n, fd[2], smh_fd;
+      |         ^
