@@ -272,6 +272,35 @@ int main(int argc, char **argv)
             }
 
         }
+        else if(strncmp(request_msg,"READ_FROM_LOGICAL_SPACE_OFFSET",30)==0)
+        {
+            unsigned int offset, nr_bytes;
+        
+            char * request_number_field=malloc(4);
+            read(req, request_number_field,4);
+            offset = *(unsigned int*)request_number_field;
+
+            read(req, request_number_field,4);
+            nr_bytes = *(unsigned int*)request_number_field;
+
+            write(res,"READ_FROM_LOGICAL_SPACE_OFFSET$",31);
+            if(mapped_file == NULL)
+            {
+                  write(res,"ERROR$",6);
+            }
+            else if(smh == NULL)
+            {
+                  write(res,"ERROR$",6);
+            }
+            if(condition_search == 0)
+                {
+                    write(res,"SUCCESS$",8);
+                }
+                else 
+                {
+                    write(res,"ERROR$",6);
+                }
+        }
         else if (strncmp(request_msg, "EXIT", 4) == 0)
         {
             close(req);
