@@ -211,6 +211,67 @@ int main(int argc, char **argv)
 
 
         }
+         else if(strncmp(request_msg,"READ_FROM_FILE_SECTION",22)==0)
+        {
+            unsigned int offset, nr_bytes, section_no;
+        
+            char * request_number_field=malloc(4);
+            read(req, request_number_field,4);
+            section_no = *(unsigned int*)request_number_field;
+
+            read(req, request_number_field,4);
+            offset = *(unsigned int*)request_number_field;
+
+            read(req, request_number_field,4);
+            nr_bytes = *(unsigned int*)request_number_field;
+
+           //write(res,&section_no,4);
+           // printf("%u %u %u %u\n",section_no,offset,nr_bytes,mapped_file[5]);
+            
+            write(res,"READ_FROM_FILE_SECTION$",23);
+            //write(res,"ERROR$",6);
+            //printf("%d",section_no <= mapped_file[5]);
+            //char* new_s=malloc(2);
+          //  new_s[0] = mapped_file[5];
+            //new_s[1] ="$";
+            //write(res,new_s,2);
+            
+            if(mapped_file == NULL)
+            {
+                  write(res,"ERROR$",6);
+            }
+            else if(smh == NULL)
+            {
+                  write(res,"ERROR$",6);
+            }
+            else if(section_no <= mapped_file[5])
+            {  
+                unsigned int sect_offset,sect_size;
+                unsigned int section_add_offset =  6 + (section_no - 1) * 29 + 21;
+                unsigned int section_add_size =  6 + (section_no - 1) * 29 + 25;
+                sect_offset = *((unsigned int*)(mapped_file + section_add_offset));
+                sect_size = *((unsigned int*)(mapped_file + section_add_size));
+
+                if(offset + nr_bytes >= sect_size)
+                {
+                  write(res,"ERROR$",6);
+                }   
+                else {
+                int i=0;
+                while(i < nr_bytes)
+                {
+                    smh[i] = mapped_file[sect_offset + offset + i];
+                    i++;
+                }
+
+                 write(res,"SUCCESS$",8);
+
+                }
+            }else {
+                write(res,"ERROR$",6);
+            }
+
+        }
         else if (strncmp(request_msg, "EXIT", 4) == 0)
         {
             close(req);
