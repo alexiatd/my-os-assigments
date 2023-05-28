@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 
 
         }
-         else if(strncmp(request_msg,"READ_FROM_FILE_SECTION",22)==0)
+        else if(strncmp(request_msg,"READ_FROM_FILE_SECTION",22)==0)
         {
             unsigned int offset, nr_bytes, section_no;
         
@@ -292,7 +292,41 @@ int main(int argc, char **argv)
             {
                   write(res,"ERROR$",6);
             }
-            if(condition_search == 0)
+            else
+            {
+                int i = 1;
+                int start = 0;
+                int condition_search = 1;
+                while( i <= mapped_file[5] && condition_search == 1)
+                {
+                unsigned int sect_offset,sect_size;
+                unsigned int section_add_offset =  6 + (i - 1) * 29 + 21;
+                unsigned int section_add_size =  6 + (i - 1) * 29 + 25;
+                sect_offset = *((unsigned int*)(mapped_file + section_add_offset));
+                sect_size = *((unsigned int*)(mapped_file + section_add_size));
+                unsigned int end = sect_size + start;
+                if( offset >= start && offset < end)
+                {
+                   int j=0;
+                   unsigned int real_offset = offset - start;
+                   if(real_offset + nr_bytes >= sect_size)
+                   { write(res,"ERROR$",6);
+                   }else{
+                while(j < nr_bytes)
+                {
+                    smh[j] = mapped_file[sect_offset + real_offset + j];
+                    j++;
+                }
+                condition_search =0;
+                }
+
+                }
+                else {
+                    start += sect_size % 3072 == 0 ? 3072 * (sect_size / 3072) : 3072 * (1 + sect_size / 3072);
+                }
+                i++;
+                }
+                if(condition_search == 0)
                 {
                     write(res,"SUCCESS$",8);
                 }
@@ -300,6 +334,7 @@ int main(int argc, char **argv)
                 {
                     write(res,"ERROR$",6);
                 }
+        }
         }
         else if (strncmp(request_msg, "EXIT", 4) == 0)
         {
