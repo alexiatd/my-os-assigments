@@ -61,7 +61,7 @@ int main(int argc, char **argv)
         printf("ERROR write response on RESP_PIPE_99110");
         exit(4);
     }
-    printf("SUCCESS");
+    // printf("SUCCESS");
 
     unsigned int n = 99110;
     //int smh_fd;
@@ -92,9 +92,11 @@ int main(int argc, char **argv)
         else if (strncmp(request_msg, "CREATE_SHM", 10) == 0)
         {
             char * request_number_field=malloc(4);
+           // char * request;
             
             read(req, request_number_field,4);
-            
+            unsigned int number_shm = *(unsigned int*)request_number_field;
+
             int smh_fd = shm_open("/iEPooM", O_CREAT | O_RDWR, 0664);
             int tr = ftruncate(smh_fd, number_shm);
             smh = (char*)mmap(NULL, number_shm, PROT_READ | PROT_WRITE, MAP_SHARED, smh_fd, 0);
@@ -109,20 +111,26 @@ int main(int argc, char **argv)
                 write(res, "CREATE_SHM$", 11);
                 write(res, "SUCCESS$", 8);
             }
+            free(request_number_field);
         }
         else if (strncmp(request_msg, "WRITE_TO_SHM", 12) == 0)
         {
            unsigned int offset, val;
         
-            read(req, offset,4);
-            read(req, val,4);
-           
+            char * request_number_field=malloc(4);
+            read(req, request_number_field,4);
+            offset = *(unsigned int*)request_number_field;
+            read(req, request_number_field,4);
+            val = *(unsigned int*)request_number_field;
+
             unsigned int valueoff = offset + sizeof(val);
             if (offset >= 0 && valueoff < 3262703)
             {
+             
                     memcpy(smh + offset, &val, sizeof(unsigned int));
                     write(res, "WRITE_TO_SHM$", 13);
                     write(res, "SUCCESS$", 8);
+                
             }
             else
             {
@@ -130,8 +138,79 @@ int main(int argc, char **argv)
                 write(res, "ERROR$", 7);
                 // exit(5);
             }
+            free(request_number_field);
         }
+        else if(strncmp(request_msg, "MAP_FILE", 8) == 0)
+        {
+            char * file_name = malloc(250);
+            read(req,c,1);
+            int i = 0;
+            while(c[0] != '$')
+            {
+                file_name[i] = c[0];
+                i++;
+                read(req,c,1);
+            }
+            file_name[i] ='\0';
+
+            write(res, "MAP_FILE$", 9);
+            int fd = open(file_name,O_RDONLY);
+            if(fd < 0)
+            {
+                write(res,"ERROR$",6);
+            }
+            else {
+                file_size = lseek(fd,0,SEEK_END);
+                //lseek(fd,0,SEEK_SET);
+                mapped_file = (char*)mmap(NULL, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
+                if(mapped_file == MAP_FAILED)
+                {
+                    write(res,"ERROR$",6);
+                }
+                else {
+                    write(res,"SUCCESS$",8);
+                }
+
+            }
+            close(fd);
+            
+        }
+        else if(strncmp(request_msg,"READ_FROM_FILE_OFFSET",21) == 0)
+        {
+            unsigned int offset, nr_bytes;
         
+            char * request_number_field=malloc(4);
+            read(req, request_number_field,4);
+            offset = *(unsigned int*)request_number_field;
+            read(req, request_number_field,4);
+            nr_bytes = *(unsigned int*)request_number_field;
+
+            write(res,"READ_FROM_FILE_OFFSET$",22);
+            if(offset + nr_bytes >= file_size)
+            {
+               write(res,"ERROR$",6);
+            }
+            else if (mapped_file == NULL)
+            {
+                write(res,"ERROR$",6);
+            }
+            else if(smh == NULL)
+            {
+                write(res,"ERROR$",6);
+            }
+            else {
+                int i = 0;
+                while(i < nr_bytes )
+                {
+                    smh[i] = mapped_file[offset+i];
+                    i++;
+                }
+                write(res,"SUCCESS$",8);
+
+            }
+
+
+        }
         else if (strncmp(request_msg, "EXIT", 4) == 0)
         {
             close(req);
