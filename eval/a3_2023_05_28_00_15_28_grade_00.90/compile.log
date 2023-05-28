@@ -1,0 +1,25 @@
+a3.c: In function 'main':
+a3.c:100:21: warning: assignment to 'char' from 'void *' makes integer from pointer without a cast [-Wint-conversion]
+  100 |             shm_ptr = mmap(NULL, 3262703, PROT_READ | PROT_WRITE, MAP_SHARED, smh_fd, 0);
+      |                     ^
+a3.c:65:10: warning: unused variable 'nr' [-Wunused-variable]
+   65 |     char nr;
+      |          ^~
+a3.c:64:19: warning: unused variable 'i' [-Wunused-variable]
+   64 |     int size = 0, i=0;
+      |                   ^
+a3.c:64:9: warning: unused variable 'size' [-Wunused-variable]
+   64 |     int size = 0, i=0;
+      |         ^~~~
+a3.c:32:18: warning: variable 'shm_ptr' set but not used [-Wunused-but-set-variable]
+   32 |     char text[4],shm_ptr;
+      |                  ^~~~~~~
+a3.c:32:10: warning: unused variable 'text' [-Wunused-variable]
+   32 |     char text[4],shm_ptr;
+      |          ^~~~
+a3.c:31:17: warning: unused variable 'buf1' [-Wunused-variable]
+   31 |     char *buf, *buf1;
+      |                 ^~~~
+a3.c:73:16: warning: 'buf' may be used uninitialized in this function [-Wmaybe-uninitialized]
+   73 |         byts = read(req, buf, 250);
+      |                ^~~~~~~~~~~~~~~~~~~
