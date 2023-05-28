@@ -26,10 +26,12 @@ struct section_header
 int main(int argc, char **argv)
 {
     int req, res;
-    ssize_t byts;
+    // ssize_t byts;
     program_name = argv[0];
-    char *buf, *buf1;
-    char text[4],shm_ptr;
+    //char *buf = malloc(501);
+    char * mapped_file;
+    int file_size;
+   
 
     if (mkfifo(RESP_PIPE_NAME, 0666))
     {
@@ -61,65 +63,83 @@ int main(int argc, char **argv)
     }
     printf("SUCCESS");
 
-    int size = 0, i=0;
-    char nr;
     unsigned int n = 99110;
-
+    //int smh_fd;
+    char* smh = NULL;
+    char* request_msg=malloc(250);
+    char* c=malloc(2);
     while (1)
     {
-        //  while(read(req, buf, 1)){
-        //     if(strcmp(buf,'$')==0)
-
-        byts = read(req, buf, 250);
-
-/*
-        buf1=strtok(buf,"$");
-        i=0;
-        while(buf1!=0){
-            strcpy(text[i],buf1);
-            i++;
-            buf1=strtok(NULL,"$");
-        }
-*/
-        //  buf[6] = '\0';
-
-        if (strncmp(buf, "PING$", 5) == 0)
+        int i=0;
+        ///read(req, buf, 500);
+        read(req,c,1);
+        while(c[0] != '$')
         {
-            // printf("gfgf");
+            request_msg[i] = c[0];
+            i++;
+            read(req,c,1);
+        }
+        request_msg[i] ='\0';
+       
+       // buf[strlen(buf)]='\0';
+        if (strncmp(request_msg, "PING", 4) == 0)
+        {
             write(res, "PING$", 5);
             write(res, "PONG$", 5);
 
-            // sprintf(nr, "%x", n);
             write(res, &n, sizeof(unsigned int));
         }
-        else if (strncmp(buf, "CREATE_SHM$",11) == 0)
+        else if (strncmp(request_msg, "CREATE_SHM", 10) == 0)
         {
+            char * request_number_field=malloc(4);
             
-            //if (strncmp(buf, "3262703", 7) == 0)
-               int smh_fd = shm_open("/iEPooM", O_CREAT | O_RDWR, 0664);
-            shm_ptr = mmap(NULL, 3262703, PROT_READ | PROT_WRITE, MAP_SHARED, smh_fd, 0);
-            if (smh_fd < 0 && ftruncate(smh_fd, 3262703) < 0)
+            read(req, request_number_field,4);
+            
+            int smh_fd = shm_open("/iEPooM", O_CREAT | O_RDWR, 0664);
+            int tr = ftruncate(smh_fd, number_shm);
+            smh = (char*)mmap(NULL, number_shm, PROT_READ | PROT_WRITE, MAP_SHARED, smh_fd, 0);
+            if (smh_fd < 0 && tr < 0)
             {
-                write(smh_fd, "CREATE_SHM$", byts);
-                write(smh_fd, "ERROR$", byts);
-                exit(2);
+                write(smh_fd, "CREATE_SHM$", 11);
+                write(smh_fd, "ERROR$", 7);
+               
             }
             else
             {
-                write(smh_fd, "CREATE_SHM$", byts);
-                write(smh_fd, "SUCCESS$", byts);
-                exit(3);
+                write(res, "CREATE_SHM$", 11);
+                write(res, "SUCCESS$", 8);
             }
         }
-        else if (strncmp(buf, "EXIT$", 5) == 0)
+        else if (strncmp(request_msg, "WRITE_TO_SHM", 12) == 0)
         {
+           unsigned int offset, val;
+        
+            read(req, offset,4);
+            read(req, val,4);
+           
+            unsigned int valueoff = offset + sizeof(val);
+            if (offset >= 0 && valueoff < 3262703)
+            {
+                    memcpy(smh + offset, &val, sizeof(unsigned int));
+                    write(res, "WRITE_TO_SHM$", 13);
+                    write(res, "SUCCESS$", 8);
+            }
+            else
+            {
+                write(res, "WRITE_TO_SHM$", 13);
+                write(res, "ERROR$", 7);
+                // exit(5);
+            }
+        }
+        
+        else if (strncmp(request_msg, "EXIT", 4) == 0)
+        {
+            close(req);
+            close(res);
+            unlink(RESP_PIPE_NAME);
             exit(1);
         }
     }
-
-    close(req);
-    close(res);
-    unlink(RESP_PIPE_NAME);
 
     return 0;
 }
